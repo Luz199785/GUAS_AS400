@@ -1,0 +1,74 @@
+
+
+********************************************************************************************************************
+Unir tres tablas con INNER JOIN Y LEFT JOIN CON ALIAS (TENER EN CUENTA QUE LOS VALORES AMBIGUOS SE DA PORQUE UN CAMPO 
+PUEDE ENCONTRARSE EN UNA TABLA PERO NO EN OTRA ENTONCES EL ALIAS SE PONE CON EL ALIAS DE LA TABLA QUE TIENE ESE CAMPO
+CASO DE DVALTR
+*********************************************************************************************************************
+
+SELECT A.DTIPMO A_DTIPMO,B.DTIPMO B_DTIPMO,                
+   A.DVRIVA A_DVRIVA,B.DVRIVA B_DVRIVA, C.DVRIVA C_DVRIVA, 
+   B.DVALTR B_DVALTR, C.DVALTR C_DVALTR,                    
+   A.DVALTO A_DVALTO, B.DVALTO B_DVALTO, A. DVALPR A_DVALPR,
+   B.DVALPR B_DVALPR, DSTREG, C.DVALPR C_DVALPR              
+                                                           
+ FROM CEFWEBCE AS A                                        
+                                                           
+                                                           
+ INNER JOIN CANJE.CAL0650B AS B                            
+ ON B.DTARJE = A.DTARJE AND                                
+  A.dcodau = B.dcodau AND B.dcodes = A.dcodes              
+                                                           
+ INNER JOIN ELECTRON.VQF0500A AS C                         
+  ON C.DTARJE = A.DTARJE AND                               
+     C.dcodau = B.dcodau AND C.dcodes = A.dcodes 
+          
+
+**********************************************************************
+ACTUALIZAR CAMPO DE 'P' PROCESADO PARA PRUEBA CON DATA
+**********************************************************************
+update CEFWEBCE SET DSTREG = ' ' 
+
+update CEFWEBCE SET DVALPR = '0', DVRIVA = '0'
+
+
+*********************************************************************
+SELECCIONAR DOS CAMPOS DE UNA TABLA
+*********************************************************************
+SELECT DVALPR, DVRIVA FROM CEFWEBCE 
+
+
+*********************************************************************
+ESPECIFICAR UN CAMPO VACIO CON WHERE
+*********************************************************************
+
+SELECT * FROM ELECTRON.VQF0500A        
+where DPEMOD = ''      
+
+
+********************************************************
+PARA PRUEBAS LIMPIAR CAMPOS
+********************************************************
+
+1. Ambientar
+2.Limpiar los archivos de trabajo
+3. Redenominar los archivos con las fechas
+4.  update  EQUIPOQA/CEF0102C            
+ set DHMARC = 090500                  
+   , DSTREG = ' '                     
+   , DNRTRF = 1                       
+   , DNMARC = 'EA900214'              
+   , DNACNT = 1                       
+   , DNRCNT = 0                       
+   , DFHARC = 240214                  
+   , DLNREG = 1893    
+
+5. update EQUIPOQA/CEF0103C              
+set DHMARC = 202200,                  
+DSTREG = ' ',                         
+DNRTRF = 13,                          
+DNMARC = 'EPTA0214SV',                
+DNACNT = 1,                           
+DNRCNT= 12,                           
+DFHARC = 240214,                      
+DLNREG = 3945 

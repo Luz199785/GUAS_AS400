@@ -1,0 +1,147 @@
+COMANDOS Y FORMAS DE INGRESO AL AS400:
+
+* Iniciar sesión: Inicio de sesión con credenciales + Intro ---> Intro x3 ---> F10
+
+* Entrar a SQL ---> Escribir STRSQL + Intro
+
+* Salir de SQL ---> Presionar F3 + Intro
+
+* WRKOBJ ----> Poder visualizar información general del archivo y realizar procesos generales (Ejemplo de uso: BIBLIOTECA/NOMBREARCHIVO)
+             (Suprimir, Copiar, ver información del archivo)
+
+* WRKOBJ (CUANDO SE REQUIERE REVISAR INFORMACIÓN DE ARCHIVO SIN CONOCER TODO EL NOMBRE) ----> WRKOBJ BIBLIOTECA/PARTENOM*
+
+* RUNQRY *N ---> Ejecutar consulta sobre objeto para validar la información que contiene. (Ejemplo: RUNQRY *N BIBLIOTECA/NOMBREARCHIVO).
+
+* F9 desde Entrada de Comandos o desde SQL ---> Permite volver a un comando previamente ejecutado
+
+* Para desplazarse por archivo se puede realizar de la siguiente forma: Escribiendo en la opción "Desplaz. a columna" +5 para moverse a la
+  derecha o -5 para moverse a la izquierda del archivo. Tambien se puede usar Shift + F8 para moverse a la derecha o Shift + F7 para la
+  izquierda. Este desplazamiento funciona luego de ejecutar comando RUNQRY *N BIBLIOTECA/NOMBREARCHIVO o 
+  en SQL SELECT * FROM RUNQRY *N BIBLIOTECA/NOMBREARCHIVO 
+
+* CALL BASEDOS/CAC0700S  ----> Comando "Call" funciona para ejecutar programas. El comando mostrado funciona para alistar el ambiente 
+                               para cualquier proceso.
+							   
+* CPYF ----> Comando para poder copiar información de un archivo a otro. (Ejemplo: CPYF FROMFILE(EQUIPOQA/EA900221BK) TOFILE(EQUIPOQA/EA900915) 
+MBROPT(*REPLACE)). Opción ADD: Adiciona registros de un archivo a otro. Opción Replace: Reemplaza todos los registros del archivo destino
+por los registros del archivo origen. (*****TENER CUIDADO CON OPCION REPLACE)
+
+* Cuando salga el error de utilice opción NOCHK* por favor me comentan.
+
+* DSPFD ----> Sirve para ver información relacionada a la estructura del archivo (Ejemplo: DSPFD BIBLIOTECA/NOMBREARCHIVO)
+
+* DSPSYSVAL SYSVAL(QDATE) ---> Validación de la fecha de la maquina/servidor. Antes de ejecutar el proceso validar la fecha y la hora. 
+
+* DSPSYSVAL SYSVAL(QTIME) ---> Validación de la fecha de la maquina/servidor. Antes de ejecutar el proceso validar la fecha y la hora.
+
+* CHGSYSVAL SYSVAL(QDATE) VALUE('DDMMAA') ----> Cambio de fecha de la maquina/servidor. Se sugiere que apenas se realice este cambio, se 
+salga de la sesión utilizando el comando SIGNOFF.
+							   
+* CHGSYSVAL SYSVAL(QTIME) VALUE('HHMMSS') -----> Cambio de la hora de la maquina/servidor. Formato Hora, Minutos y Segundos ---> 
+Formato de la hora 24 hrs.
+--------------------------------------------------------------------------------------------------------------------------------------
+ARCHIVOS PROCESO CANJE ELECTRONICO - AMBIENTACION DE PROCESO:
+
+* EA90MMDD - (SE RECIBE COMO EASVMMDD) ( ----> Temas relacionados a TRX's realizadas en cajeros (TRX's de consulta, TRX's de avances
+             , TRX's de anulación avances y consultas) Se carga el archivo en la biblioteca SWITCH.
+
+* PTLSVMMDD - (SE RECIBE COMO EPTAMMDD) ----> Temas relacionados a TRX's realizadas por datafonos de credibanco (POS) (TRX's de compras
+              , TRX's anuladas, TRX's reversadas). Este archivo se debe nombrar como PTLSVMMDD y se guarda en la biblioteca SWITCH.
+			  
+*******************
+							 
+* ELECTRON/CEF0102C: Es un archivo de control del proceso de Canje Electronico que almacena la información del archivo EA90MMDD que se va
+                    a ejecutar. DLNREG ---> Longitud estructura del archivo. DNRTRF ---> Total registros TRX's con registro de control.
+					DNRCNT ----> Total registros TRX's sin registro de control. ----> DNMARC ---> Nombre archivo a ejecutar. 
+					(Ejemplo: EA900915) DFHARC ----> Fecha de ejecución del proceso, va con formato Año Mes Dia (AAMMDD).
+
+- Actualizar información tabla de control SQL.
+update  EQUIPOQA/CEF0102C
+set DHMARC = 090500      
+  , DSTREG = ' '         
+  , DNRTRF = 120           
+  , DNMARC = 'EA900915'  
+  , DNACNT = 1           
+  , DNRCNT = 119            
+  , DFHARC = 230915      
+  , DLNREG = 1893  
+WHERE DNMARC = 'EA900428'
+
+- Pasar registro actualizado a la tabla del proceso.
+CPYF FROMFILE(EQUIPOQA/CEF0102C) TOFILE(ELECTRON/CEF0102C) MBROPT(*ADD)
+
+
+************************
+
+* ELECTRON/CEF0103C: Es un archivo de control del proceso de Canje Electronico que almacena la información del archivo PTLSVMMDD que se va
+                    a ejecutar. DLNREG ---> Longitud estructura del archivo. DNRTRF ---> Total registros TRX's con registro de control.
+					DNRCNT ----> Total registros TRX's sin registro de control. ----> DNMARC ---> Nombre archivo a ejecutar 
+					(Ejemplo: EPTA0915SV). DFHARC ----> Fecha de ejecución del proceso, va con formato Año Mes Dia (AAMMDD).
+
+- Actualizar información tabla de control SQL.
+update EQUIPOQA/CEF0103C 
+set DHMARC = 202200,
+DSTREG = ' ',
+DNRTRF = 1,
+DNMARC = 'EPTA0915SV',
+DNACNT = 1,
+DNRCNT= 0,
+DFHARC = 230915,
+DLNREG = 3945
+WHERE DNMARC ='EPTA0421SV'
+
+- Pasar registro actualizado a la tabla del proceso.
+CPYF FROMFILE(EQUIPOQA/CEF0103C) TOFILE(ELECTRON/CEF0103C) MBROPT(*ADD)
+
+************************
+
+* BASEDOS/VDFCNTR0: Archivo de control que contiene la información de Miembros Principales y Miembros Asociados.
+                    DFHAMD y DFHINC ----> Se coloca la fecha en la cual se esta ejecutando el proceso con el formato Año Mes Dia
+                    (Formato AAAAMMDD ---> Ejemplo: 20230915). DFHJUL ----> Fecha con información del año + número del día del año
+					(Ejemplo: 23258, donde 23 es el año y 258 es el número de día del año).
+
+UPDATE EQUIPOQA/VDFCNTR0
+SET DFHAMD = 20230915
+  , DFHJUL = 23258
+  , DFHINC = 20230915
+  , DCNINC = 'Y'
+  , DCNORED = 1
+WHERE DFHAMD = 20230227
+
+CPYF FROMFILE(EQUIPOQA/VDFCNTR0) TOFILE(BASEDOS/VDFCNTR0) MBROPT(*ADD)
+
+
+************************
+
+* CANJE/CAFCNTRL: Archivo de Control que contiene marcaciones relacionadas a otros procesos que se van ejecutando previo al Canje.
+                  TANOCA ----> Campo con la información del año en la cual se ejecuta el proceso (Ejemplo: 23)
+				  TMESCA ----> Campo con la información del mes en el cual se ejecuta el proceso (Ejemplo: 09)
+				  TDIACA ----> Campo con la información del día +1 en el cual se ejecuta el proceso (Ejemplo: 16)
+				  TFECHA ----> Campo con la información de la fecha en la cual se ejecuta el proceso +1 día (Ejemplo: 20230916)
+
+UPDATE EQUIPOQA/CAFCNTRL
+SET  TANOCA = 23
+   , TMESCA = 09
+   , TDIACA = 16
+   , TFECHA = 230916
+   , TPR006 = 'Y'
+   , TPR008 = 'Y'
+   , TPR010 = 'Y'
+WHERE TFECHA = 230428
+
+CPYF FROMFILE(EQUIPOQA/CAFCNTRL) TOFILE(CANJE/CAFCNTRL) MBROPT(*ADD)
+
+************************
+COMANDOS A EJECUTAR ANTES INICIAR EL PROCESO DE CANJE ELECTRONICO LUEGO DE PARAMETRIZAR LAS TABLAS DE CONTROL DEL PROCESO.
+
+CHGDTAARA DTAARA(SWITCH/SWCONT (1 20)) VALUE('                    ') ----> ESTE SE DEJA CON EL ESPACIO
+CHGDTAARA DTAARA(ELECTRON/CEDATA (14 6)) VALUE('230915')  ----> Se coloca la fecha en la cual se esta ejecutando el proceso con el formato 
+                                                                Año Mes Dia
+CALL IREY/VYINICIO
+CALL IREY/VYCBORRA
+DELETE  CANJE/CAF0100D WHERE DBINFU = 900000 -----> Eliminar este registro desde la consola de SQL (STRSQL)
+CALL BASEDOS/CAC0700S
+
+***************************
+PROCESO DE CARGA DE ARCHIVO PARA AS400.
